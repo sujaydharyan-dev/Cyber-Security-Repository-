@@ -1,535 +1,964 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodecForge // Multi-Algorithm Encoder & Decoder</title>
-    <style>
-        :root {
-            --bg-canvas: #f1f5f9;
-            --bg-surface: #ffffff;
-            --bg-field: #f8fafc;
-            --border-subtle: #cbd5e1;
-            --border-focus: #4f46e5;
-            --text-main: #0f172a;
-            --text-muted: #475569;
-            --accent-primary: #4f46e5;
-            --accent-secondary: #0d9488;
-            --accent-warn: #d97706;
-            --danger: #dc2626;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodecForge // Multi-Algorithm Encoder &amp; Decoder</title>
+<style>
+:root {
+  --bg-page: #f4f6f9;
+  --bg-card: #ffffff;
+  --bg-field: #f8fafc;
+  --bg-rail: #eef2f6;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #c2410c;
+  --accent-hover: #9a3412;
+  --accent-soft: rgba(194, 65, 12, 0.1);
+  --secondary: #0f172a;
+  --border: #dbe2ea;
+  --danger: #b91c1c;
+  --danger-soft: rgba(185, 28, 28, 0.08);
+  --success: #15803d;
+  --shadow-card: 0 12px 30px -12px rgba(15, 23, 42, 0.12);
+  --radius-lg: 16px;
+  --radius-md: 10px;
+}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-        body {
-            background-color: var(--bg-canvas);
-            background-image: radial-gradient(circle at top right, rgba(79, 70, 229, 0.08), transparent 45%),
-                              radial-gradient(circle at bottom left, rgba(13, 148, 136, 0.08), transparent 45%);
-            color: var(--text-main);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 24px 16px;
-        }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(194, 65, 12, 0.07), transparent 36%),
+    radial-gradient(circle at 88% 85%, rgba(15, 23, 42, 0.06), transparent 40%);
+  line-height: 1.5;
+}
 
-        .app-shell {
-            width: 100%;
-            max-width: 720px;
-            background-color: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 16px;
-            padding: 28px;
-            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-        }
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+  z-index: -1;
+}
 
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            padding-bottom: 20px;
-            margin-bottom: 22px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
+.app-wrapper {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 28px 24px 36px;
+}
 
-        .badge {
-            display: inline-block;
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #4338ca;
-            background: rgba(79, 70, 229, 0.1);
-            border: 1px solid rgba(79, 70, 229, 0.25);
-            padding: 4px 10px;
-            border-radius: 999px;
-            margin-bottom: 8px;
-        }
+/* ---------- Staggered Entrance Animations ---------- */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-        h1 {
-            font-size: 1.65rem;
-            font-weight: 700;
-            color: var(--text-main);
-            line-height: 1.25;
-        }
+.studio-header {
+  animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
 
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 4px;
-        }
+.status-banner {
+  animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+}
 
-        .toolbar {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 14px;
-            align-items: center;
-            background-color: var(--bg-field);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 18px;
-        }
+.pane-left {
+  animation: fadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
 
-        .algo-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+.action-rail {
+  animation: fadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+}
 
-        .algo-group label {
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
+.pane-right {
+  animation: fadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both;
+}
 
-        .algo-select {
-            flex: 1;
-            min-width: 170px;
-            background-color: var(--bg-surface);
-            color: var(--text-main);
-            border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
+.security-strip {
+  animation: fadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
 
-        .algo-select:focus {
-            outline: none;
-            border-color: var(--border-focus);
-        }
+/* ---------- Header & Segmented Mode Pills ---------- */
+.studio-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
 
-        .sample-bar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px;
-        }
+.eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
 
-        .sample-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
+.brand-block h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
 
-        .chip-btn {
-            background-color: var(--bg-surface);
-            color: var(--text-main);
-            border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            padding: 5px 10px;
-            font-size: 0.78rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.18s ease;
-        }
+.brand-block .divider {
+  color: var(--accent);
+  margin: 0 4px;
+}
 
-        .chip-btn:hover {
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-            transform: translateY(-1px);
-        }
+.brand-block .subtitle {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 1.15rem;
+}
 
-        .field-block {
-            margin-bottom: 16px;
-        }
+.mode-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
 
-        .field-block label {
-            display: block;
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 7px;
-        }
+.mode-pill {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background-color 0.22s ease, color 0.22s ease, transform 0.15s ease;
+}
 
-        textarea {
-            width: 100%;
-            height: 112px;
-            background-color: var(--bg-field);
-            color: var(--text-main);
-            border: 1px solid var(--border-subtle);
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
-            font-size: 0.93rem;
-            line-height: 1.45;
-            resize: vertical;
-            transition: border-color 0.18s ease, box-shadow 0.18s ease;
-        }
+.mode-pill:hover {
+  color: var(--text-primary);
+  background: var(--bg-rail);
+}
 
-        textarea:focus {
-            outline: none;
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-        }
+.mode-pill.active {
+  background: var(--secondary);
+  color: #ffffff;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
 
-        textarea[readonly] {
-            border-style: dashed;
-        }
+/* ---------- Status Banner ---------- */
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
 
-        .action-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
-            gap: 10px;
-            margin-bottom: 14px;
-        }
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  transition: background-color 0.25s ease, transform 0.25s ease;
+}
 
-        .btn {
-            padding: 10px 14px;
-            border-radius: 8px;
-            border: 1px solid transparent;
-            font-size: 0.88rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.15s ease, filter 0.15s ease;
-        }
+.status-banner.is-error {
+  border-left-color: var(--danger);
+  background: #fef2f2;
+  color: var(--danger);
+}
 
-        .btn:active {
-            transform: scale(0.98);
-        }
+.status-banner.is-error .status-dot {
+  background: var(--danger);
+}
 
-        .btn:hover {
-            filter: brightness(1.06);
-        }
+.status-banner.is-success {
+  border-left-color: var(--success);
+}
 
-        .primary {
-            background-color: var(--accent-primary);
-            color: #ffffff;
-        }
+.status-banner.is-success .status-dot {
+  background: var(--success);
+}
 
-        .success {
-            background-color: var(--accent-secondary);
-            color: #ffffff;
-        }
+/* ---------- 3-Column Studio Grid ---------- */
+.studio-grid {
+  display: grid;
+  grid-template-columns: 1fr 164px 1fr;
+  gap: 18px;
+  align-items: stretch;
+}
 
-        .info {
-            background-color: #e2e8f0;
-            color: var(--text-main);
-            border-color: #cbd5e1;
-        }
+.pane-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
 
-        .secondary {
-            background-color: transparent;
-            color: var(--text-muted);
-            border-color: var(--border-subtle);
-        }
+.pane-card:focus-within {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 16px 34px -14px rgba(194, 65, 12, 0.22);
+}
 
-        .status {
-            min-height: 22px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
+.pane-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
 
-        .status.ok {
-            color: #0f766e;
-        }
+.pane-tag {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
 
-        .status.error {
-            color: var(--danger);
-        }
+.pane-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
 
-        .security-note {
-            margin-top: 20px;
-            padding: 14px 16px;
-            background-color: rgba(217, 119, 6, 0.08);
-            border: 1px solid rgba(217, 119, 6, 0.25);
-            border-left: 4px solid var(--accent-warn);
-            border-radius: 10px;
-            font-size: 0.86rem;
-            color: #334155;
-        }
+/* Sample Chips & Utility Buttons */
+.sample-group,
+.utility-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
 
-        .security-note h3 {
-            color: #b45309;
-            font-size: 0.94rem;
-            margin-bottom: 4px;
-        }
+.sample-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
 
-        @media (max-width: 640px) {
-            .toolbar {
-                grid-template-columns: 1fr;
-            }
+.chip-btn,
+.util-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-field);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
 
-            .app-shell {
-                padding: 20px;
-            }
-        }
-    </style>
+.chip-btn:hover,
+.util-btn:hover {
+  background: var(--secondary);
+  color: #ffffff;
+  border-color: var(--secondary);
+  transform: translateY(-1px);
+}
+
+.chip-warn:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.util-danger {
+  color: var(--danger);
+  border-color: rgba(185, 28, 28, 0.25);
+  background: var(--danger-soft);
+}
+
+.util-danger:hover {
+  background: var(--danger);
+  color: #ffffff;
+  border-color: var(--danger);
+}
+
+/* ---------- Textareas & Custom Scrollbars ---------- */
+.code-area {
+  width: 100%;
+  min-height: 290px;
+  flex: 1;
+  resize: vertical;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-field);
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.code-area:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.code-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.code-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* Output Flash Animation */
+@keyframes outputPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(194, 65, 12, 0.4);
+    border-color: var(--accent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(194, 65, 12, 0);
+  }
+}
+
+.output-flash {
+  animation: outputPulse 0.45s ease;
+}
+@keyframes resetWipe {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.99);
+    border-color: var(--danger);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.reset-flash {
+  animation: resetWipe 0.35s ease;
+}
+/* Pane Footer Readout */
+.pane-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pane-footer strong {
+  color: var(--text-primary);
+}
+
+/* ---------- Center Vertical Action Rail ---------- */
+.action-rail {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 12px;
+  background: var(--bg-rail);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.rail-btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.rail-btn:active {
+  transform: translateY(1px);
+}
+
+/* Sheen effect on primary Encode button */
+.rail-primary {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(194, 65, 12, 0.28);
+}
+
+.rail-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.28) 50%, transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+}
+
+.rail-primary:hover::after {
+  transform: translateX(120%);
+}
+
+.rail-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.rail-secondary {
+  background: var(--secondary);
+  color: #ffffff;
+}
+
+.rail-secondary:hover {
+  background: #1e293b;
+  transform: translateY(-2px);
+}
+
+.rail-ghost {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.rail-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.rail-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Swap Icon Spin Animation */
+.swap-icon {
+  display: inline-block;
+  font-size: 1.05rem;
+}
+
+@keyframes spinSwap {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+.swap-spin {
+  animation: spinSwap 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------- Bottom Security Strip ---------- */
+.security-strip {
+  margin-top: 20px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.security-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.security-strip p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+/* ---------- Responsive Stacking ---------- */
+@media (max-width: 960px) {
+  .studio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-rail {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .rail-btn {
+    flex: 1 1 140px;
+  }
+
+  .rail-divider {
+    display: none;
+  }
+
+  .code-area {
+    min-height: 200px;
+  }
+}
+
+/* ---------- Clean PDF / Print Layout ---------- */
+@media print {
+  .bg-grid,
+  .sample-group,
+  .utility-group,
+  .action-rail {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  .studio-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pane-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}</style>
 </head>
 <body>
-    <div class="app-shell">
-        <header class="top-bar">
-            <div>
-                <span class="badge">Data &amp; Cipher Lab</span>
-                <h1>Base64 Studio</h1>
-                <p class="subtitle">Multi-Algorithm Encoding, Decoding</p>
-            </div>
-        </header>
+  <div class="bg-grid" aria-hidden="true"></div>
 
-        <main>
-            <div class="toolbar">
-                <div class="algo-group">
-                    <label for="algoSelect">Mode:</label>
-                    <select id="algoSelect" class="algo-select">
-                        <option value="base64">Base64</option>
-                        <option value="hex">Hexadecimal (UTF-8)</option>
-                        <option value="url">URL Encoding</option>
-                        <option value="binary">Binary (8-bit UTF-8)</option>
-                        <option value="rot13">ROT13 Cipher</option>
-                    </select>
-                </div>
+  <div class="app-wrapper">
+    <!-- Top Studio Header -->
+    <header class="studio-header">
+      <div class="brand-block">
+        <span class="eyebrow">DATA &amp; CIPHER LAB</span>
+        <h1>Breeze Codec<span class="divider">//</span> <span class="subtitle">Multi-Algorithm Encoder &amp; Decoder</span></h1>
+      </div>
 
-                <div class="sample-bar">
-                    <span class="sample-label">Samples:</span>
-                    <button type="button" id="sampleTextBtn" class="chip-btn">Plain Text</button>
-                    <button type="button" id="sampleUtf8Btn" class="chip-btn">UTF-8 / Emoji</button>
-                    <button type="button" id="sampleInvalidBtn" class="chip-btn">Invalid</button>
-                </div>
-            </div>
+      <!-- Segmented Algorithm Switcher -->
+      <nav class="mode-bar" aria-label="Encoding and Cipher Modes">
+        <button type="button" class="mode-pill active" data-mode="base64">Base64</button>
+        <button type="button" class="mode-pill" data-mode="hex">Hex</button>
+        <button type="button" class="mode-pill" data-mode="binary">Binary</button>
+        <button type="button" class="mode-pill" data-mode="url">URL</button>
+        <button type="button" class="mode-pill" data-mode="rot13">ROT13</button>
+      </nav>
+    </header>
 
-            <div class="field-block">
-                <label for="inputText">Source Payload</label>
-                <textarea id="inputText" placeholder="Enter raw text or encoded data here..."></textarea>
-            </div>
-
-            <div class="action-row">
-                <button type="button" id="encodeBtn" class="btn primary">Encode</button>
-                <button type="button" id="decodeBtn" class="btn success">Decode</button>
-                <button type="button" id="swapBtn" class="btn info">Swap I/O</button>
-                <button type="button" id="copyBtn" class="btn info">Copy Result</button>
-                <button type="button" id="clearBtn" class="btn secondary">Reset</button>
-            </div>
-
-            <div id="statusMsg" class="status"></div>
-
-            <div class="field-block">
-                <label for="outputText">Transformed Output</label>
-                <textarea id="outputText" placeholder="Output appears here..." readonly></textarea>
-            </div>
-        </main>
-
-        <section class="security-note">
-            <h3>Security Reminder</h3>
-            <p><strong>Encoding &amp; ciphers are not encryption.</strong> None of these modes use a secret key to protect confidentiality—never rely on them to secure passwords or private data.</p>
-        </section>
+    <div id="statusBanner" class="status-banner" role="status" aria-live="polite">
+      <span class="status-dot"></span>
+      <span id="statusText">Ready — Active Mode: Base64</span>
     </div>
 
-    <script>const inputText = document.getElementById("inputText");
-const outputText = document.getElementById("outputText");
-const statusMsg = document.getElementById("statusMsg");
-const algoSelect = document.getElementById("algoSelect");
+    <main class="studio-grid">
+      <section class="pane-card pane-left" aria-labelledby="sourceHeading">
+        <div class="pane-header">
+          <div>
+            <span class="pane-tag">INPUT STREAM</span>
+            <h2 id="sourceHeading">Source Payload</h2>
+          </div>
 
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
+          <div class="sample-group" aria-label="Sample Payloads">
+            <span class="sample-label">Samples:</span>
+            <button type="button" class="chip-btn" data-sample="plain">Plain Text</button>
+            <button type="button" class="chip-btn" data-sample="utf8">UTF-8 / Emoji</button>
+            <button type="button" class="chip-btn chip-warn" data-sample="invalid">Invalid</button>
+          </div>
+        </div>
 
-function showStatus(message, isError = false) {
-    statusMsg.textContent = message;
-    statusMsg.className = isError ? "status error" : "status ok";
-}
+        <textarea
+          id="sourceInput"
+          class="code-area"
+          placeholder="Enter raw text or encoded data here..."
+          spellcheck="false"
+        ></textarea>
 
-function bytesToBinaryString(bytes) {
-    return Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
-}
+        <div class="pane-footer">
+          <span>Input Chars: <strong id="inChars">0</strong></span>
+          <span>Input UTF-8 Bytes: <strong id="inBytes">0</strong></span>
+        </div>
+      </section>
+      <aside class="action-rail" aria-label="Transformation Controls">
+        <button type="button" id="encodeBtn" class="rail-btn rail-primary">
+          <span>Encode</span>
+          <span class="arrow" aria-hidden="true">&rarr;</span>
+        </button>
 
-function binaryStringToBytes(binString) {
-    return Uint8Array.from(binString, (char) => char.codePointAt(0));
-}
+        <button type="button" id="decodeBtn" class="rail-btn rail-secondary">
+          <span class="arrow" aria-hidden="true">&larr;</span>
+          <span>Decode</span>
+        </button>
 
-function rot13(str) {
-    return str.replace(/[a-zA-Z]/g, (char) => {
-        const base = char <= "Z" ? 65 : 97;
-        return String.fromCharCode(((char.charCodeAt(0) - base + 13) % 26) + base);
-    });
-}
+        <div class="rail-divider" aria-hidden="true"></div>
 
-function encodeByAlgo(raw, algo) {
-    switch (algo) {
-        case "base64": {
-            const bytes = textEncoder.encode(raw);
-            return btoa(bytesToBinaryString(bytes));
-        }
-        case "hex": {
-            const bytes = textEncoder.encode(raw);
-            return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(" ");
-        }
-        case "url": {
-            return encodeURIComponent(raw);
-        }
-        case "binary": {
-            const bytes = textEncoder.encode(raw);
-            return Array.from(bytes, (b) => b.toString(2).padStart(8, "0")).join(" ");
-        }
-        case "rot13": {
-            return rot13(raw);
-        }
-        default:
-            throw new Error("Unsupported algorithm");
-    }
-}
+        <button type="button" id="swapBtn" class="rail-btn rail-ghost" title="Swap Input and Output">
+          <span id="swapIcon" class="swap-icon" aria-hidden="true">&#8644;</span>
+          <span>Swap I/O</span>
+        </button>
+      </aside>
+      <section class="pane-card pane-right" aria-labelledby="outputHeading">
+        <div class="pane-header">
+          <div>
+            <span class="pane-tag">RESULT STREAM &bull; <span id="activeModeLabel">BASE64</span></span>
+            <h2 id="outputHeading">Transformed Output</h2>
+          </div>
 
-function decodeByAlgo(input, algo) {
-    switch (algo) {
-        case "base64": {
-            const binString = atob(input.trim());
-            const bytes = binaryStringToBytes(binString);
-            return textDecoder.decode(bytes, { fatal: true });
-        }
-        case "hex": {
-            const cleaned = input.trim().replace(/\s+/g, "");
-            if (!cleaned || cleaned.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(cleaned)) {
-                throw new Error("Invalid Hex");
-            }
-            const bytes = new Uint8Array(cleaned.length / 2);
-            for (let i = 0; i < cleaned.length; i += 2) {
-                bytes[i / 2] = parseInt(cleaned.slice(i, i + 2), 16);
-            }
-            return textDecoder.decode(bytes, { fatal: true });
-        }
-        case "url": {
-            return decodeURIComponent(input.trim());
-        }
-        case "binary": {
-            const groups = input.trim().split(/\s+/).filter(Boolean);
-            if (groups.length === 0 || !groups.every((bits) => /^[01]{8}$/.test(bits))) {
-                throw new Error("Invalid Binary");
-            }
-            const bytes = Uint8Array.from(groups, (bits) => parseInt(bits, 2));
-            return textDecoder.decode(bytes, { fatal: true });
-        }
-        case "rot13": {
-            return rot13(input);
-        }
-        default:
-            throw new Error("Unsupported algorithm");
-    }
-}
+          <div class="utility-group">
+            <button type="button" id="copyBtn" class="util-btn">Copy Result</button>
+            <button type="button" id="resetBtn" class="util-btn util-danger">Reset</button>
+          </div>
+        </div>
 
-// Encode text using selected algorithm
-document.getElementById("encodeBtn").addEventListener("click", () => {
-    const raw = inputText.value;
-    const algo = algoSelect ? algoSelect.value : "base64";
-    const algoLabel = algoSelect ? algoSelect.options[algoSelect.selectedIndex].text : "Base64";
+        <textarea
+          id="transformedOutput"
+          class="code-area"
+          placeholder="Output appears here..."
+          readonly
+          spellcheck="false"
+        ></textarea>
 
-    if (!raw) {
-        showStatus("Please enter some text to encode.", true);
-        return;
-    }
-    try {
-        outputText.value = encodeByAlgo(raw, algo);
-        showStatus(`Successfully encoded using ${algoLabel}!`);
-    } catch (err) {
-        showStatus(`Error encoding with ${algoLabel}.`, true);
-    }
-});
+        <div class="pane-footer">
+          <span>Output Chars: <strong id="outChars">0</strong></span>
+          <span>UTF-8 Bytes: <strong id="outBytes">0</strong></span>
+          <span>Entropy: <strong id="outEntropy">0.00</strong> bits/ch</span>
+        </div>
+      </section>
+    </main>
 
-// Decode text using selected algorithm
-document.getElementById("decodeBtn").addEventListener("click", () => {
-    const input = inputText.value;
-    const algo = algoSelect ? algoSelect.value : "base64";
-    const algoLabel = algoSelect ? algoSelect.options[algoSelect.selectedIndex].text : "Base64";
+    <!-- Bottom Security Reminder Strip -->
+    <footer class="security-strip">
+      <div class="security-badge">SECURITY REMINDER</div>
+      <p>
+        Encoding &amp; ciphers are not encryption. None of these modes use a secret key to protect
+        confidentiality—never rely on them to secure passwords or private data.
+      </p>
+    </footer>
+  </div>
 
-    if (!input.trim()) {
-        showStatus("Please enter text to decode.", true);
-        return;
-    }
-    try {
-        outputText.value = decodeByAlgo(input, algo);
-        showStatus(`Successfully decoded using ${algoLabel}!`);
-    } catch (err) {
-        outputText.value = "";
-        showStatus(`Invalid input for ${algoLabel}! Check formatting and try again.`, true);
-    }
-});
+  <script>/* =========================================================
+   CodecForge — Multi-Algorithm Encoding & Decoding Engine
+   ========================================================= */
 
-// Copy output to clipboard
-document.getElementById("copyBtn").addEventListener("click", () => {
-    if (!outputText.value) {
-        showStatus("Nothing to copy yet.", true);
-        return;
-    }
-    navigator.clipboard.writeText(outputText.value);
-    showStatus("Copied output to clipboard!");
-});
+const modePills = document.querySelectorAll(".mode-pill");
+const activeModeLabel = document.getElementById("activeModeLabel");
+const statusBanner = document.getElementById("statusBanner");
+const statusText = document.getElementById("statusText");
 
-// Clear all boxes
-document.getElementById("clearBtn").addEventListener("click", () => {
-    inputText.value = "";
-    outputText.value = "";
-    statusMsg.textContent = "";
-    statusMsg.className = "status";
-});
+const sourceInput = document.getElementById("sourceInput");
+const transformedOutput = document.getElementById("transformedOutput");
 
-// Swap input and output text
+const encodeBtn = document.getElementById("encodeBtn");
+const decodeBtn = document.getElementById("decodeBtn");
 const swapBtn = document.getElementById("swapBtn");
-if (swapBtn) {
-    swapBtn.addEventListener("click", () => {
-        if (!outputText.value) {
-            showStatus("Nothing in output to swap.", true);
-            return;
-        }
-        const temp = inputText.value;
-        inputText.value = outputText.value;
-        outputText.value = temp;
-        showStatus("Swapped input and output!");
-    });
+const swapIcon = document.getElementById("swapIcon");
+const copyBtn = document.getElementById("copyBtn");
+const resetBtn = document.getElementById("resetBtn");
+const sampleButtons = document.querySelectorAll("[data-sample]");
+
+const inChars = document.getElementById("inChars");
+const inBytes = document.getElementById("inBytes");
+const outChars = document.getElementById("outChars");
+const outBytes = document.getElementById("outBytes");
+const outEntropy = document.getElementById("outEntropy");
+
+let currentMode = "base64";
+
+const SAMPLES = {
+  base64: {
+    plain: "Cybersecurity Lab: Encoding formats data for safe transport.",
+    utf8: "UTF-8 Check: Namaste \u{1F680} | Security \u{1F510} | \u00E9\u00F1\u00FC",
+    invalid: "NotValidBase64@@@==="
+  },
+  hex: {
+    plain: "43 6f 64 65 63 46 6f 72 67 65",
+    utf8: "UTF-8 Hex: \u{1F6E1}\uFE0F Shield",
+    invalid: "4Z 99 GG"
+  },
+  binary: {
+    plain: "01001000 01101001",
+    utf8: "Binary UTF-8 \u26A1",
+    invalid: "0102101 110"
+  },
+  url: {
+    plain: "https://example.com/search?q=cyber security&lang=en",
+    utf8: "https://example.com/tag/\u{1F512}-safe-url",
+    invalid: "%E0%A4%A"
+  },
+  rot13: {
+    plain: "Plorefrphevgl Yno: EBG13 fuvsgf yrggref ol 13 cynprf.",
+    utf8: "ROT13 keeps numbers 123 & emojis \u{1F9E9} intact!",
+    invalid: ""
+  }
+};
+
+/* ---------- Status & Animation Helpers ---------- */
+function setStatus(message, type = "neutral") {
+  statusText.textContent = message;
+  statusBanner.classList.remove("is-error", "is-success");
+  if (type === "error") statusBanner.classList.add("is-error");
+  if (type === "success") statusBanner.classList.add("is-success");
 }
 
-// Helper to load sample text into input
-function loadSample(text, label) {
-    inputText.value = text;
-    outputText.value = "";
-    showStatus(`Loaded sample: ${label}`);
+function pulseOutput() {
+  transformedOutput.classList.remove("output-flash");
+  void transformedOutput.offsetWidth;
+  transformedOutput.classList.add("output-flash");
 }
 
-const sampleTextBtn = document.getElementById("sampleTextBtn");
-if (sampleTextBtn) {
-    sampleTextBtn.addEventListener("click", () => {
-        loadSample("Base64 makes text transport safe.", "Plain Text");
-    });
+function spinSwapIcon() {
+  swapIcon.classList.remove("swap-spin");
+  void swapIcon.offsetWidth;
+  swapIcon.classList.add("swap-spin");
 }
 
-const sampleUtf8Btn = document.getElementById("sampleUtf8Btn");
-if (sampleUtf8Btn) {
-    sampleUtf8Btn.addEventListener("click", () => {
-        loadSample("Namaste! 🙌", "UTF-8 / Emoji");
-    });
+function computeEntropy(str) {
+  if (!str) return 0;
+  const counts = Object.create(null);
+  for (const ch of str) {
+    counts[ch] = (counts[ch] || 0) + 1;
+  }
+  const total = str.length;
+  let entropy = 0;
+  for (const count of Object.values(counts)) {
+    const p = count / total;
+    entropy -= p * Math.log2(p);
+  }
+  return entropy;
 }
 
-const sampleInvalidBtn = document.getElementById("sampleInvalidBtn");
-if (sampleInvalidBtn) {
-    sampleInvalidBtn.addEventListener("click", () => {
-        loadSample("Not_Valid_Base64!!!", "Invalid Base64");
-    });
+function updateMetrics() {
+  const encoder = new TextEncoder();
+  const inVal = sourceInput.value;
+  const outVal = transformedOutput.value;
+
+  inChars.textContent = String([...inVal].length);
+  inBytes.textContent = String(encoder.encode(inVal).length);
+
+  outChars.textContent = String([...outVal].length);
+  outBytes.textContent = String(encoder.encode(outVal).length);
+  outEntropy.textContent = computeEntropy(outVal).toFixed(2);
 }
-</script>
+
+/* ---------- UTF-8 Safe Algorithms ---------- */
+function encodeBase64(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
+  return btoa(binary);
+}
+
+function decodeBase64(encoded) {
+  const cleaned = encoded.trim();
+  if (!cleaned) throw new Error("Input is empty.");
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cleaned) || cleaned.length % 4 !== 0) {
+    throw new Error("Invalid Base64 format or padding.");
+  }
+  const binary = atob(cleaned);
+  const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}
+
+function encodeHex(text) {
+  const bytes = new TextEncoder().encode(text);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(" ");
+}
+
+function decodeHex(hexStr) {
+  const cleaned = hexStr.replace(/\s+/g, "");
+  if (!cleaned) throw new Error("Input is empty.");
+  if (cleaned.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(cleaned)) {
+    throw new Error("Invalid Hex string (must contain even-length 0-9, A-F pairs).");
+  }
+  const bytes = new Uint8Array(cleaned.length / 2);
+  for (let i = 0; i < cleaned.length; i += 2) {
+    bytes[i / 2] = parseInt(cleaned.slice(i, i + 2), 16);
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}
+
+function encodeBinary(text) {
+  const bytes = new TextEncoder().encode(text);
+  return Array.from(bytes, (b) => b.toString(2).padStart(8, "0")).join(" ");
+}
+
+function decodeBinary(binStr) {
+  const cleaned = binStr.replace(/\s+/g, "");
+  if (!cleaned) throw new Error("Input is empty.");
+  if (!/^[01]+$/.test(cleaned) || cleaned.length % 8 !== 0) {
+    throw new Error("Invalid Binary string (must be 8-bit groups of 0 and 1).");
+  }
+  const bytes = new Uint8Array(cleaned.length / 8);
+  for (let i = 0; i < cleaned.length; i += 8) {
+    bytes[i / 8] = parseInt(cleaned.slice(i, i + 8), 2);
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}
+
+function rot13Transform(text) {
+  return text.replace(/[a-zA-Z]/g, (ch) => {
+    const base = ch <= "Z" ? 65 : 97;
+    return String.fromCharCode(((ch.charCodeAt(0) - base + 13) % 26) + base);
+  });
+}
+
+/* ---------- Core Actions ---------- */
+function runTransform(direction) {
+  const raw = sourceInput.value;
+  if (!raw.trim() && raw.length === 0) {
+    setStatus("Enter text or load a sample payload first.", "error");
+    return;
+  }
+
+  try {
+    let result = "";
+    if (direction === "encode") {
+      if (currentMode === "base64") result = encodeBase64(raw);
+      else if (currentMode === "hex") result = encodeHex(raw);
+      else if (currentMode === "binary") result = encodeBinary(raw);
+      else if (currentMode === "url") result = encodeURIComponent(raw);
+      else if (currentMode === "rot13") result = rot13Transform(raw);
+      setStatus(`Encoded successfully using ${currentMode.toUpperCase()}.`, "success");
+    } else {
+      if (currentMode === "base64") result = decodeBase64(raw);
+      else if (currentMode === "hex") result = decodeHex(raw);
+      else if (currentMode === "binary") result = decodeBinary(raw);
+      else if (currentMode === "url") result = decodeURIComponent(raw.trim());
+      else if (currentMode === "rot13") result = rot13Transform(raw);
+      setStatus(`Decoded successfully from ${currentMode.toUpperCase()}.`, "success");
+    }
+
+    transformedOutput.value = result;
+    pulseOutput();
+    updateMetrics();
+  } catch (err) {
+    transformedOutput.value = "";
+    updateMetrics();
+    setStatus(`Error: ${err.message}`, "error");
+  }
+}
+
+/* ---------- Event Listeners ---------- */
+modePills.forEach((pill) => {
+  pill.addEventListener("click", () => {
+    modePills.forEach((btn) => btn.classList.remove("active"));
+    pill.classList.add("active");
+    currentMode = pill.dataset.mode;
+    activeModeLabel.textContent = currentMode.toUpperCase();
+    setStatus(`Switched mode to ${currentMode.toUpperCase()}.`, "neutral");
+  });
+});
+
+sampleButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const sampleType = btn.dataset.sample;
+    const modeSamples = SAMPLES[currentMode] || SAMPLES.base64;
+    sourceInput.value = modeSamples[sampleType] ?? "";
+    transformedOutput.value = "";
+    updateMetrics();
+    setStatus(`Loaded "${btn.textContent}" sample for ${currentMode.toUpperCase()}.`, "neutral");
+  });
+});
+
+encodeBtn.addEventListener("click", () => runTransform("encode"));
+decodeBtn.addEventListener("click", () => runTransform("decode"));
+
+swapBtn.addEventListener("click", () => {
+  spinSwapIcon();
+  const temp = sourceInput.value;
+  sourceInput.value = transformedOutput.value;
+  transformedOutput.value = temp;
+  updateMetrics();
+  setStatus("Swapped Source Payload and Transformed Output.", "neutral");
+});
+
+copyBtn.addEventListener("click", async () => {
+  if (!transformedOutput.value) {
+    setStatus("Nothing to copy — transform a payload first.", "error");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(transformedOutput.value);
+    setStatus("Transformed Output copied to clipboard.", "success");
+  } catch {
+    transformedOutput.select();
+    document.execCommand("copy");
+    setStatus("Transformed Output copied to clipboard.", "success");
+  }
+});
+
+resetBtn.addEventListener("click", () => {
+  sourceInput.value = "";
+  transformedOutput.value = "";
+
+  [sourceInput, transformedOutput].forEach((field) => {
+    field.classList.remove("reset-flash");
+    void field.offsetWidth;
+    field.classList.add("reset-flash");
+  });
+
+  updateMetrics();
+  setStatus(`Workspace cleared — Active Mode: ${currentMode.toUpperCase()}`, "neutral");
+});
+sourceInput.addEventListener("input", updateMetrics);
+
+// Initialize metrics on page load
+updateMetrics();</script>
 </body>
 </html>
